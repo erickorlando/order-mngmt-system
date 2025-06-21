@@ -46,8 +46,24 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // Health Checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<VendorsDbContext>()
-    .AddRedis(builder.Configuration.GetConnectionString("Redis")!)
-    .AddRabbitMQ(builder.Configuration.GetConnectionString("RabbitMQ")!, name: "rabbitmq");
+    .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
+
+// Add RabbitMQ Health Check only if RabbitMQ configuration exists
+var rabbitMQSection = builder.Configuration.GetSection("RabbitMQ");
+if (rabbitMQSection.Exists())
+{
+    var rabbitMQHost = rabbitMQSection["HostName"];
+    var rabbitMQPort = rabbitMQSection["Port"];
+    var rabbitMQUser = rabbitMQSection["UserName"];
+    var rabbitMQPassword = rabbitMQSection["Password"];
+    var rabbitMQVHost = rabbitMQSection["VirtualHost"];
+    
+    if (!string.IsNullOrEmpty(rabbitMQHost))
+    {
+        var rabbitMQConnectionString = $"amqp://{rabbitMQUser}:{rabbitMQPassword}@{rabbitMQHost}:{rabbitMQPort}{rabbitMQVHost}";
+        builder.Services.AddHealthChecks().AddRabbitMQ(rabbitMQConnectionString, name: "rabbitmq");
+    }
+}
 
 // CORS
 builder.Services.AddCors(options =>
