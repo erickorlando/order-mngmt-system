@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # CosmosDB Emulator
+  cosmosdb:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+    volumes:
+      - cosmosdb_data:/data
+
+  # Orders API
+  orders-api:
+    build:
+      context: .
+      dockerfile: src/Services/Orders/Orders.Api/Dockerfile
+    ports:
+      - "7001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - sqlserver
+      - redis
+      - rabbitmq
+      - cosmosdb
+    volumes:
+      - ./src/Services/Orders/Orders.Api/appsettings.Development.json:/app/appsettings.Development.json
+
+  # Vendors API
+  vendors-api:
+    build:
+      context: .
+      dockerfile: src/Services/Vendors/Vendors.Api/Dockerfile
+    ports:
+      - "7002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - sqlserver
+      - redis
+      - rabbitmq
+      - cosmosdb
+    volumes:
+      - ./src/Services/Vendors/Vendors.Api/appsettings.Development.json:/app/appsettings.Development.json
+
+volumes:
+  sqlserver_data:
+  redis_data:
+  rabbitmq_data:
+  cosmosdb_data: 

@@ -1,0 +1,69 @@
+services:
+  # SQL Server para datos principales
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: orders-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - orders-network
+
+  # Redis para Cache
+  redis:
+    image: redis:7-alpine
+    container_name: orders-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - orders-network
+
+  # RabbitMQ para Queue & Exchange
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: orders-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - orders-network
+
+  # Azure Cosmos DB Emulator (NoSQL)
+  cosmosdb:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: orders-cosmosdb
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+    ports:
+      - "8081:8081"
+      - "10251:10251"
+      - "10252:10252"
+      - "10253:10253"
+      - "10254:10254"
+    volumes:
+      - cosmosdb_data:/tmp/cosmos
+    networks:
+      - orders-network
+      
+volumes:
+  sqlserver_data:
+  redis_data:
+  rabbitmq_data:
+  cosmosdb_data:
+
+networks:
+  orders-network:
+    driver: bridge
