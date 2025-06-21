@@ -15,7 +15,7 @@ public class OrderApplicationService : IOrderApplicationService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ICustomerRepository _customerRepository;
-    private readonly IVendorRepository _vendorRepository;
+    private readonly IVendorService _vendorService;
     private readonly ICacheService _cacheService;
     private readonly IEventBus _eventBus;
     private readonly ILogger<OrderApplicationService> _logger;
@@ -23,14 +23,14 @@ public class OrderApplicationService : IOrderApplicationService
     public OrderApplicationService(
         IOrderRepository orderRepository,
         ICustomerRepository customerRepository,
-        IVendorRepository vendorRepository,
+        IVendorService vendorService,
         ICacheService cacheService,
         IEventBus eventBus,
         ILogger<OrderApplicationService> logger)
     {
         _orderRepository = orderRepository;
         _customerRepository = customerRepository;
-        _vendorRepository = vendorRepository;
+        _vendorService = vendorService;
         _cacheService = cacheService;
         _eventBus = eventBus;
         _logger = logger;
@@ -41,12 +41,13 @@ public class OrderApplicationService : IOrderApplicationService
         _logger.LogInformation("Creating order for customer {CustomerId} and vendor {VendorId}", 
             request.CustomerId, request.VendorId);
 
-        // Validar existencia de cliente y vendedor
+        // Validar existencia de cliente
         var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
         if (customer == null)
             throw new ArgumentException($"Customer with ID {request.CustomerId} not found");
 
-        var vendor = await _vendorRepository.GetByIdAsync(request.VendorId);
+        // Validar existencia y estado del vendedor usando el servicio de integración
+        var vendor = await _vendorService.GetVendorByIdAsync(request.VendorId);
         if (vendor == null)
             throw new ArgumentException($"Vendor with ID {request.VendorId} not found");
 
@@ -114,7 +115,7 @@ public class OrderApplicationService : IOrderApplicationService
             return null;
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
-        var vendor = await _vendorRepository.GetByIdAsync(order.VendorId);
+        var vendor = await _vendorService.GetVendorByIdAsync(order.VendorId);
 
         var orderDto = MapToOrderDetailDto(order, customer, vendor);
 
@@ -180,7 +181,7 @@ public class OrderApplicationService : IOrderApplicationService
         await InvalidateOrderCacheAsync(order.CustomerId, order.VendorId);
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
-        var vendor = await _vendorRepository.GetByIdAsync(order.VendorId);
+        var vendor = await _vendorService.GetVendorByIdAsync(order.VendorId);
 
         return MapToOrderDetailDto(order, customer, vendor);
     }
@@ -225,7 +226,7 @@ public class OrderApplicationService : IOrderApplicationService
         await _cacheService.RemoveAsync($"order_detail_{orderId}");
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
-        var vendor = await _vendorRepository.GetByIdAsync(order.VendorId);
+        var vendor = await _vendorService.GetVendorByIdAsync(order.VendorId);
 
         return MapToOrderDetailDto(order, customer, vendor);
     }
@@ -248,7 +249,7 @@ public class OrderApplicationService : IOrderApplicationService
         await _cacheService.RemoveAsync($"order_detail_{orderId}");
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
-        var vendor = await _vendorRepository.GetByIdAsync(order.VendorId);
+        var vendor = await _vendorService.GetVendorByIdAsync(order.VendorId);
 
         return MapToOrderDetailDto(order, customer, vendor);
     }
@@ -275,7 +276,7 @@ public class OrderApplicationService : IOrderApplicationService
         await _cacheService.RemoveAsync($"order_detail_{orderId}");
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
-        var vendor = await _vendorRepository.GetByIdAsync(order.VendorId);
+        var vendor = await _vendorService.GetVendorByIdAsync(order.VendorId);
 
         return MapToOrderDetailDto(order, customer, vendor);
     }
@@ -379,7 +380,7 @@ public class OrderApplicationService : IOrderApplicationService
         await _cacheService.RemoveAsync("orders_summary_all");
     }
 
-    private static OrderDetailDto MapToOrderDetailDto(Order order, Customer? customer, Vendor? vendor)
+    private static OrderDetailDto MapToOrderDetailDto(Order order, Customer? customer, VendorInfo? vendor)
     {
         return new OrderDetailDto
         {

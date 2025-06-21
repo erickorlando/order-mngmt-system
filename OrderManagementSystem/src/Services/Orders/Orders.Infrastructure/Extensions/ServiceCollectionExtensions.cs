@@ -25,7 +25,7 @@ public static class ServiceCollectionExtensions
         // HTTP Client for Vendors API
         services.AddHttpClient<IVendorService, VendorService>(client =>
         {
-            client.BaseAddress = new Uri(configuration["VendorApi:BaseUrl"]!);
+            client.BaseAddress = new Uri(configuration["VendorsApi:BaseUrl"]!);
         });
 
         // Event Bus
