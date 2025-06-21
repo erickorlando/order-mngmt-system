@@ -33,14 +33,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<OrdersDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Redis Cache
-builder.Services.AddStackExchangeRedisCache(options =>
-    options.Configuration = builder.Configuration.GetConnectionString("Redis"));
-
 // Application Services
 builder.Services.AddApplicationServices();
 
-// Infrastructure Services
+// Infrastructure Services (incluye Redis Cache desde Common)
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Health Checks

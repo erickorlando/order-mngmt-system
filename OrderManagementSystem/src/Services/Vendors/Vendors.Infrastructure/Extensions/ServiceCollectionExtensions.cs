@@ -2,6 +2,7 @@ using EventBus.Interfaces;
 using EventBus.RabbitMQ;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Common.Extensions;
 using Vendors.Application.Interfaces;
 using Vendors.Domain;
 using Vendors.Infrastructure.Repositories;
@@ -13,11 +14,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        // Redis Cache (usando Common)
+        services.AddRedisCache(configuration);
+
         // Repositories
         services.AddScoped<IVendorRepository, VendorRepository>();
 
         // Services
-        services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<ICosmosDbService, CosmosDbService>();
 
         // Event Bus

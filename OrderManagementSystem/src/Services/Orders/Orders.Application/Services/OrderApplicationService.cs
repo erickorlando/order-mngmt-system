@@ -1,4 +1,5 @@
-﻿using EventBus.Interfaces;
+﻿using Common.Interfaces;
+using EventBus.Interfaces;
 using Microsoft.Extensions.Logging;
 using Orders.Application.Dtos;
 using Orders.Application.Events;
@@ -6,8 +7,6 @@ using Orders.Application.Interfaces;
 using Orders.Domain.Entities;
 using Orders.Domain.Repositories;
 using Orders.Domain.ValueObjects;
-using Vendors.Domain;
-using Vendors.Domain.Entities;
 
 namespace Orders.Application.Services;
 
